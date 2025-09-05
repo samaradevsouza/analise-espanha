@@ -1,0 +1,100 @@
+
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #444;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .certidao {
+      border: 2px solid #e0e0e0;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+    .certidao h3 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0;
+      color: #444;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      font-weight: 600;
+      margin-bottom: 5px;
+      display: block;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 4px 0;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .btn-danger {
+      background: #e74c3c;
+    }
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+    .btn-secondary {
+      background: #3498db;
+    }
+    .btn-secondary:hover {
+      background: #2980b9;
+    }
+    .results {
+      margin-top: 25px;
+      padding: 20px;
+      background: #fdfdfd;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+    }
+    .relacao-item {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .relacao-item select {
+      flex: 1;
+    }
+    .copy-btn {
+      margin-top: 10px;
+      background: #8e44ad;
+    }
+    .copy-btn:hover {
+      background: #732d91;
+    }

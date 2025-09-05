@@ -1,742 +1,254 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistema de Comparação de Certidões</title>
-    <style>
-      :root {
-        --primary: #2c3e50;
-        --secondary: #3498db;
-        --success: #2ecc71;
-        --warning: #f39c12;
-        --danger: #e74c3c;
-        --light: #ecf0f1;
-        --dark: #34495e;
-      }
+<head>
+  <meta charset="UTF-8">
+  <title>Análise Espanha</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Análise Espanha</h1>
+    <div id="certidoes-container"></div>
+    <button onclick="addCertidao()">Adicionar Certidão</button>
+    <button class="btn-secondary" onclick="compararCertidoes()">Comparar Certidões</button>
+    <button class="btn-danger" onclick="resetar()">Resetar</button>
+    <div id="results" class="results"></div>
+    <textarea id="exportText" rows="12" readonly></textarea>
+    <button class="copy-btn" onclick="copiarTexto()">Copiar Dados</button>
+  </div>
 
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      }
+  <script>
+    const tiposCertidao = ["Nascimento", "Casamento", "Óbito"];
+    const relacoesFamiliares = ["Pai", "Mãe", "Filho", "Filha", "Avô Paterno", "Avó Paterna", "Avô Materno", "Avó Materna", "Cônjuge"];
 
-      body {
-        background-color: #f5f7fa;
-        color: #333;
-        line-height: 1.6;
-        padding: 20px;
-      }
+    let certidaoCount = 0;
+    let certidoes = [];
 
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-      }
+    function addCertidao() {
+      certidaoCount++;
+      const certidaoId = `certidao-${certidaoCount}`;
+      const certidaoDiv = document.createElement("div");
+      certidaoDiv.className = "certidao";
+      certidaoDiv.id = certidaoId;
 
-      header {
-        text-align: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #eee;
-      }
-
-      h1 {
-        color: var(--primary);
-        margin-bottom: 10px;
-      }
-
-      .description {
-        color: var(--dark);
-        font-size: 1.1em;
-        max-width: 800px;
-        margin: 0 auto;
-      }
-
-      .controls {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-
-      button {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s ease;
-      }
-
-      .btn-primary {
-        background-color: var(--secondary);
-        color: white;
-      }
-
-      .btn-primary:hover {
-        background-color: #2980b9;
-      }
-
-      .btn-success {
-        background-color: var(--success);
-        color: white;
-      }
-
-      .btn-success:hover {
-        background-color: #27ae60;
-      }
-
-      .btn-danger {
-        background-color: var(--danger);
-        color: white;
-      }
-
-      .btn-danger:hover {
-        background-color: #c0392b;
-      }
-
-      .certidoes-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-
-      .certidao {
-        background: var(--light);
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
-
-      .certidao h3 {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #ddd;
-        color: var(--primary);
-      }
-
-      .form-group {
-        margin-bottom: 12px;
-      }
-
-      label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 600;
-        color: var(--dark);
-      }
-
-      input,
-      select {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 1em;
-      }
-
-      .relacao-group {
-        background-color: #e8f4fc;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-      }
-
-      .results {
-        margin-top: 30px;
-        padding: 20px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-
-      .result-item {
-        padding: 15px;
-        margin-bottom: 15px;
-        border-radius: 5px;
-        border-left: 4px solid var(--secondary);
-        background-color: #f8f9fa;
-      }
-
-      .high-match {
-        border-left-color: var(--success);
-        background-color: #e8f5e9;
-      }
-
-      .medium-match {
-        border-left-color: var(--warning);
-        background-color: #fff8e1;
-      }
-
-      .low-match {
-        border-left-color: var(--danger);
-        background-color: #ffebee;
-      }
-
-      .match-value {
-        font-weight: bold;
-        font-size: 1.2em;
-        margin-top: 5px;
-      }
-
-      .summary {
-        margin-top: 20px;
-        padding: 15px;
-        background: var(--light);
-        border-radius: 8px;
-        text-align: center;
-      }
-
-      .summary h3 {
-        color: var(--primary);
-        margin-bottom: 10px;
-      }
-
-      .summary-value {
-        font-size: 1.8em;
-        font-weight: bold;
-        color: var(--secondary);
-      }
-
-      @media (max-width: 768px) {
-        .certidoes-container {
-          grid-template-columns: 1fr;
-        }
-
-        .controls {
-          flex-direction: column;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <header>
-        <h1>Sistema de Comparação de Certidões</h1>
-        <p class="description">
-          Adicione múltiplas certidões, defina as relações familiares entre elas
-          e analise a consistência dos dados.
-        </p>
-      </header>
-
-      <div class="controls">
-        <button id="add-certidao" class="btn-primary">
-          Adicionar Certidão
-        </button>
-        <button id="compare" class="btn-success">Comparar Certidões</button>
-        <button id="reset" class="btn-danger">Limpar Tudo</button>
-      </div>
-
-      <div class="certidoes-container" id="certidoes-container">
-        <!-- Certidões serão adicionadas aqui dinamicamente -->
-      </div>
-
-      <div class="results" id="results" style="display: none">
-        <h2>Resultados da Comparação</h2>
-        <div id="result-items">
-          <!-- Resultados serão adicionados aqui -->
+      certidaoDiv.innerHTML = `
+        <h3>
+          Certidão ${certidaoCount}
+          <button class="btn-danger" onclick="removeCertidao('${certidaoId}')">X</button>
+        </h3>
+        <div class="form-group">
+          <label for="${certidaoId}-tipo">Tipo de Certidão:</label>
+          <select id="${certidaoId}-tipo" class="tipo-certidao">
+            ${tiposCertidao.map(tipo => `<option value="${tipo}">${tipo}</option>`).join("")}
+          </select>
         </div>
-        <div class="summary">
-          <h3>Similaridade Geral</h3>
-          <div class="summary-value" id="overall-similarity">0%</div>
+        <div class="form-group">
+          <label for="${certidaoId}-nome">Nome do Registrado:</label>
+          <input type="text" id="${certidaoId}-nome" placeholder="Nome completo">
         </div>
-      </div>
-    </div>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const certidoesContainer = document.getElementById(
-          "certidoes-container"
-        );
-        const addCertidaoBtn = document.getElementById("add-certidao");
-        const compareBtn = document.getElementById("compare");
-        const resetBtn = document.getElementById("reset");
-        const resultsDiv = document.getElementById("results");
-        const resultItems = document.getElementById("result-items");
-        const overallSimilarity = document.getElementById("overall-similarity");
-
-        let certidaoCount = 0;
-        const certidoes = [];
-
-        // Tipos de certidão disponíveis
-        const tiposCertidao = [
-          "Certidão de Nascimento",
-          "Certidão de Casamento",
-          "Certidão de Óbito",
-        ];
-
-        // Relações familiares possíveis
-        const relacoesFamiliares = [
-          "Pai",
-          "Mãe",
-          "Filho",
-          "Filha",
-          "Cônjuge",
-          "Avô Paterno",
-          "Avó Paterna",
-          "Avô Materno",
-          "Avó Materna",
-          "Neto",
-          "Neta",
-          "Bisavô",
-          "Bisavó",
-          "Tio",
-          "Tia",
-          "Sobrinho",
-          "Sobrinha",
-        ];
-
-        // Adicionar a primeira certidão automaticamente
-        addCertidao();
-
-        // Event listeners
-        addCertidaoBtn.addEventListener("click", addCertidao);
-        compareBtn.addEventListener("click", compareCertidoes);
-        resetBtn.addEventListener("click", resetAll);
-
-        function addCertidao() {
-          certidaoCount++;
-          const certidaoId = `certidao-${certidaoCount}`;
-
-          const certidaoDiv = document.createElement("div");
-          certidaoDiv.className = "certidao";
-          certidaoDiv.id = certidaoId;
-
-          certidaoDiv.innerHTML = `
-                    <h3>
-                        Certidão ${certidaoCount}
-                        <button class="btn-danger" onclick="removeCertidao('${certidaoId}')">X</button>
-                    </h3>
-                    <div class="form-group">
-                        <label for="${certidaoId}-tipo">Tipo de Certidão:</label>
-                        <select id="${certidaoId}-tipo" class="tipo-certidao">
-                            ${tiposCertidao
-                              .map(
-                                (tipo) =>
-                                  `<option value="${tipo}">${tipo}</option>`
-                              )
-                              .join("")}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="${certidaoId}-nome">Nome do Registrado:</label>
-                        <input type="text" id="${certidaoId}-nome" placeholder="Nome completo">
-                    </div>
-                    <div class="form-group">
-                        <label for="${certidaoId}-nascimento">Data de Nascimento:</label>
-                        <input type="date" id="${certidaoId}-nascimento">
-                    </div>
-                    <div class="form-group">
-                        <label for="${certidaoId}-pai">Nome do Pai:</label>
-                        <input type="text" id="${certidaoId}-pai" placeholder="Nome do pai">
-                    </div>
-                    <div class="form-group">
-                        <label for="${certidaoId}-mae">Nome da Mãe:</label>
-                        <input type="text" id="${certidaoId}-mae" placeholder="Nome da mãe">
-                    </div>
-                    <div class="form-group">
-                        <label for="${certidaoId}-avo-paterno">Avô Paterno (opcional):</label>
-                        <input type="text" id="${certidaoId}-avo-paterno" placeholder="Nome do avô paterno">
-                    </div>
-                    <div class="form-group">
-                        <label for="${certidaoId}-avo-paterna">Avó Paterna (opcional):</label>
-                        <input type="text" id="${certidaoId}-avo-paterna" placeholder="Nome da avó paterna">
-                    </div>
-                    <div class="form-group">
-                        <label for="${certidaoId}-avo-materno">Avô Materno (opcional):</label>
-                        <input type="text" id="${certidaoId}-avo-materno" placeholder="Nome do avô materno">
-                    </div>
-                    <div class="form-group">
-                        <label for="${certidaoId}-avo-materna">Avó Materna (opcional):</label>
-                        <input type="text" id="${certidaoId}-avo-materna" placeholder="Nome da avó materna">
-                    </div>
-                    <div class="form-group">
-                        <label>Relação com outras certidões:</label>
-                        <div class="relacao-group">
-                            <p><small>Selecione as certidões relacionadas e defina o tipo de relação</small></p>
-                            <div id="${certidaoId}-relacoes"></div>
-                        </div>
-                    </div>
-                `;
-
-          certidoesContainer.appendChild(certidaoDiv);
-          updateRelacoesOptions();
-
-          // Adicionar esta certidão ao array
-          certidoes.push({
-            id: certidaoId,
-            tipo: tiposCertidao[0],
-            nome: "",
-            nascimento: "",
-            pai: "",
-            mae: "",
-            avoPaterno: "",
-            avoPaterna: "",
-            avoMaterno: "",
-            avoMaterna: "",
-            relacoes: [],
-          });
-        }
-
-        function updateRelacoesOptions() {
-          const relacaoContainers = document.querySelectorAll(
-            ".relacao-group > div"
-          );
-
-          relacaoContainers.forEach((container) => {
-            const select = container.querySelector("select");
-            const currentCertId = container.id.split("-relacao-")[0];
-
-            // Salvar o valor atual
-            const currentValue = select.value;
-
-            // Limpar e repopular
-            select.innerHTML = "";
-
-            // Adicionar opção vazia
-            select.appendChild(new Option("-- Selecione --", ""));
-
-            // Adicionar todas as certidões exceto a atual
-            for (let i = 1; i <= certidaoCount; i++) {
-              const otherCertId = `certidao-${i}`;
-              if (otherCertId !== currentCertId) {
-                select.appendChild(new Option(`Certidão ${i}`, otherCertId));
-              }
-            }
-
-            // Restaurar o valor anterior, se ainda for válido
-            if (
-              currentValue &&
-              select.querySelector(`option[value="${currentValue}"]`)
-            ) {
-              select.value = currentValue;
-            }
-          });
-        }
-
-        function removeCertidao(id) {
-          if (certidaoCount <= 1) {
-            alert("É necessário ter pelo menos uma certidão.");
-            return;
-          }
-
-          const certidaoDiv = document.getElementById(id);
-          certidaoDiv.remove();
-
-          // Remover do array
-          const index = certidoes.findIndex((c) => c.id === id);
-          if (index !== -1) {
-            certidoes.splice(index, 1);
-          }
-
-          certidaoCount--;
-          updateRelacoesOptions();
-        }
-
-        function compareCertidoes() {
-          // Coletar dados de todas as certidões
-          collectCertidaoData();
-
-          // Realizar comparações
-          const comparisons = performComparisons();
-
-          // Exibir resultados
-          displayResults(comparisons);
-        }
-
-        function collectCertidaoData() {
-          for (let i = 0; i < certidoes.length; i++) {
-            const cert = certidoes[i];
-            const certId = cert.id;
-
-            cert.tipo = document.getElementById(`${certId}-tipo`).value;
-            cert.nome = document.getElementById(`${certId}-nome`).value;
-            cert.nascimento = document.getElementById(
-              `${certId}-nascimento`
-            ).value;
-            cert.pai = document.getElementById(`${certId}-pai`).value;
-            cert.mae = document.getElementById(`${certId}-mae`).value;
-            cert.avoPaterno = document.getElementById(
-              `${certId}-avo-paterno`
-            ).value;
-            cert.avoPaterna = document.getElementById(
-              `${certId}-avo-paterna`
-            ).value;
-            cert.avoMaterno = document.getElementById(
-              `${certId}-avo-materno`
-            ).value;
-            cert.avoMaterna = document.getElementById(
-              `${certId}-avo-materna`
-            ).value;
-          }
-        }
-
-        function performComparisons() {
-          const comparisons = [];
-
-          // Comparar cada par de certidões
-          for (let i = 0; i < certidoes.length; i++) {
-            for (let j = i + 1; j < certidoes.length; j++) {
-              const cert1 = certidoes[i];
-              const cert2 = certidoes[j];
-
-              // Verificar se há relação definida entre as certidões
-              const relacao = findRelation(cert1, cert2);
-
-              if (relacao) {
-                // Comparar com base no tipo de relação
-                const comparison = compareBasedOnRelation(
-                  cert1,
-                  cert2,
-                  relacao
-                );
-                comparisons.push(comparison);
-              } else {
-                // Comparação genérica
-                const comparison = {
-                  cert1: cert1.id,
-                  cert2: cert2.id,
-                  tipo: "Geral",
-                  similaridade: calculateSimilarity(cert1, cert2),
-                  detalhes: "Comparação geral entre as certidões",
-                };
-                comparisons.push(comparison);
-              }
-            }
-          }
-
-          return comparisons;
-        }
-
-        function findRelation(cert1, cert2) {
-          // Verificar se cert1 tem relação com cert2
-          for (const rel of cert1.relacoes) {
-            if (rel.certidao === cert2.id) {
-              return rel.tipo;
-            }
-          }
-
-          // Verificar se cert2 tem relação com cert1
-          for (const rel of cert2.relacoes) {
-            if (rel.certidao === cert1.id) {
-              return rel.tipo;
-            }
-          }
-
-          return null;
-        }
-
-        function compareBasedOnRelation(cert1, cert2, relacao) {
-          let campo1, campo2, tipoComparacao, detalhes;
-
-          switch (relacao) {
-            case "Pai":
-            case "Mãe":
-              campo1 = cert1.nome;
-              campo2 = relacao === "Pai" ? cert2.pai : cert2.mae;
-              tipoComparacao = `${relacao}-Filho(a)`;
-              detalhes = `Nome do ${relacao} (${cert1.id}) vs Nome do ${relacao} na certidão do filho(a) (${cert2.id})`;
-              break;
-
-            case "Filho":
-            case "Filha":
-              campo1 = cert1.nome;
-              campo2 = relacao === "Filho" ? cert2.pai : cert2.mae;
-              tipoComparacao = `Filho(a)-${
-                relacao === "Filho" ? "Pai" : "Mãe"
-              }`;
-              detalhes = `Nome do filho(a) (${cert1.id}) vs Nome do filho(a) na certidão do pai/mãe (${cert2.id})`;
-              break;
-
-            case "Cônjuge":
-              campo1 = cert1.nome;
-              campo2 = cert2.nome;
-              tipoComparacao = "Cônjuges";
-              detalhes = `Nome dos cônjuges entre ${cert1.id} e ${cert2.id}`;
-              break;
-
-            case "Avô Paterno":
-            case "Avó Paterna":
-              campo1 = cert1.nome;
-              campo2 = cert2.avoPaterno || cert2.avoPaterna;
-              tipoComparacao = "Avô/Avó Paterno(a)";
-              detalhes = `Nome do avô/avó (${cert1.id}) vs Nome do avô/avó paterno(a) na certidão do neto(a) (${cert2.id})`;
-              break;
-
-            case "Avô Materno":
-            case "Avó Materna":
-              campo1 = cert1.nome;
-              campo2 = cert2.avoMaterno || cert2.avoMaterna;
-              tipoComparacao = "Avô/Avó Materno(a)";
-              detalhes = `Nome do avô/avó (${cert1.id}) vs Nome do avô/avó materno(a) na certidão do neto(a) (${cert2.id})`;
-              break;
-
-            default:
-              campo1 = cert1.nome;
-              campo2 = cert2.nome;
-              tipoComparacao = "Geral";
-              detalhes = `Comparação geral entre ${cert1.id} e ${cert2.id}`;
-          }
-
-          const similaridade = calculateFieldSimilarity(campo1, campo2);
-
-          return {
-            cert1: cert1.id,
-            cert2: cert2.id,
-            tipo: tipoComparacao,
-            similaridade: similaridade,
-            detalhes: detalhes,
-            campo1: campo1,
-            campo2: campo2,
-          };
-        }
-
-        function calculateSimilarity(cert1, cert2) {
-          // Calcular similaridade média entre todos os campos
-          const fields = ["nome", "pai", "mae", "nascimento"];
-          let totalSimilarity = 0;
-          let count = 0;
-
-          for (const field of fields) {
-            if (cert1[field] && cert2[field]) {
-              totalSimilarity += calculateFieldSimilarity(
-                cert1[field],
-                cert2[field]
-              );
-              count++;
-            }
-          }
-
-          return count > 0 ? totalSimilarity / count : 0;
-        }
-
-        function calculateFieldSimilarity(str1, str2) {
-          if (!str1 || !str2) return 0;
-
-          // Normalizar strings
-          const normalize = (str) => {
-            return str
-              .toLowerCase()
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "") // Remover acentos
-              .replace(/\s+/g, " ") // Remover espaços múltiplos
-              .trim();
-          };
-
-          const s1 = normalize(str1);
-          const s2 = normalize(str2);
-
-          if (s1 === s2) return 100;
-
-          // Calcular similaridade usando algoritmo de Levenshtein
-          const maxLength = Math.max(s1.length, s2.length);
-          if (maxLength === 0) return 100;
-
-          const distance = levenshteinDistance(s1, s2);
-          return Math.max(0, 100 - (distance / maxLength) * 100);
-        }
-
-        function levenshteinDistance(s1, s2) {
-          // Implementação do algoritmo de Levenshtein
-          const matrix = [];
-
-          for (let i = 0; i <= s1.length; i++) {
-            matrix[i] = [i];
-          }
-
-          for (let j = 0; j <= s2.length; j++) {
-            matrix[0][j] = j;
-          }
-
-          for (let i = 1; i <= s1.length; i++) {
-            for (let j = 1; j <= s2.length; j++) {
-              if (s1.charAt(i - 1) === s2.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
-              } else {
-                matrix[i][j] = Math.min(
-                  matrix[i - 1][j - 1] + 1, // substituição
-                  matrix[i][j - 1] + 1, // inserção
-                  matrix[i - 1][j] + 1 // eliminação
-                );
-              }
-            }
-          }
-
-          return matrix[s1.length][s2.length];
-        }
-
-        function displayResults(comparisons) {
-          resultItems.innerHTML = "";
-
-          if (comparisons.length === 0) {
-            resultItems.innerHTML =
-              '<div class="result-item">Nenhuma comparação foi realizada. Adicione relações entre as certidões.</div>';
-            resultsDiv.style.display = "block";
-            return;
-          }
-
-          let totalSimilarity = 0;
-
-          for (const comp of comparisons) {
-            totalSimilarity += comp.similaridade;
-
-            const resultItem = document.createElement("div");
-            let className = "result-item";
-
-            if (comp.similaridade >= 80) {
-              className += " high-match";
-            } else if (comp.similaridade >= 50) {
-              className += " medium-match";
-            } else {
-              className += " low-match";
-            }
-
-            resultItem.className = className;
-            resultItem.innerHTML = `
-                        <strong>${comp.tipo}: ${comp.cert1} vs ${
-              comp.cert2
-            }</strong>
-                        <p>${comp.detalhes}</p>
-                        <p><em>"${comp.campo1 || "N/A"}" vs "${
-              comp.campo2 || "N/A"
-            }"</em></p>
-                        <div class="match-value">Similaridade: ${comp.similaridade.toFixed(
-                          2
-                        )}%</div>
-                    `;
-
-            resultItems.appendChild(resultItem);
-          }
-
-          // Calcular e exibir similaridade geral
-          const avgSimilarity = totalSimilarity / comparisons.length;
-          overallSimilarity.textContent = `${avgSimilarity.toFixed(2)}%`;
-
-          resultsDiv.style.display = "block";
-        }
-
-        function resetAll() {
-          if (confirm("Tem certeza que deseja limpar todas as certidões?")) {
-            certidoesContainer.innerHTML = "";
-            resultsDiv.style.display = "none";
-            certidaoCount = 0;
-            certidoes.length = 0;
-            addCertidao();
-          }
-        }
-
-        // Função global para remover certidões (usada no onclick)
-        window.removeCertidao = removeCertidao;
+        <div class="form-group">
+          <label for="${certidaoId}-nascimento">Data de Nascimento:</label>
+          <input type="date" id="${certidaoId}-nascimento">
+        </div>
+        <div class="form-group">
+          <label for="${certidaoId}-pai">Nome do Pai:</label>
+          <input type="text" id="${certidaoId}-pai" placeholder="Nome do pai">
+        </div>
+        <div class="form-group">
+          <label for="${certidaoId}-mae">Nome da Mãe:</label>
+          <input type="text" id="${certidaoId}-mae" placeholder="Nome da mãe">
+        </div>
+        <div class="form-group">
+          <label for="${certidaoId}-avo-paterno">Avô Paterno:</label>
+          <input type="text" id="${certidaoId}-avo-paterno" placeholder="Nome do avô paterno">
+        </div>
+        <div class="form-group">
+          <label for="${certidaoId}-avo-paterna">Avó Paterna:</label>
+          <input type="text" id="${certidaoId}-avo-paterna" placeholder="Nome da avó paterna">
+        </div>
+        <div class="form-group">
+          <label for="${certidaoId}-avo-materno">Avô Materno:</label>
+          <input type="text" id="${certidaoId}-avo-materno" placeholder="Nome do avô materno">
+        </div>
+        <div class="form-group">
+          <label for="${certidaoId}-avo-materna">Avó Materna:</label>
+          <input type="text" id="${certidaoId}-avo-materna" placeholder="Nome da avó materna">
+        </div>
+        <div class="form-group">
+          <label>Relações:</label>
+          <div id="${certidaoId}-relacoes"></div>
+          <button type="button" onclick="addRelacao('${certidaoId}')">+ Adicionar Relação</button>
+        </div>
+      `;
+
+      document.getElementById("certidoes-container").appendChild(certidaoDiv);
+
+      certidoes.push({
+        id: certidaoId, tipo: tiposCertidao[0],
+        nome: "", nascimento: "",
+        pai: "", mae: "",
+        avoPaterno: "", avoPaterna: "", avoMaterno: "", avoMaterna: "",
+        relacoes: []
       });
-    </script>
-  </body>
+
+      updateRelacoesOptions();
+    }
+
+    function addRelacao(certidaoId) {
+      const relacoesDiv = document.getElementById(`${certidaoId}-relacoes`);
+      const relacaoDiv = document.createElement("div");
+      relacaoDiv.className = "relacao-item";
+      relacaoDiv.innerHTML = `
+        <select class="relacao-certidao"></select>
+        <select class="relacao-tipo">
+          ${relacoesFamiliares.map(r => `<option value="${r}">${r}</option>`).join("")}
+        </select>
+        <button class="btn-danger" type="button" onclick="this.parentElement.remove()">X</button>
+      `;
+      relacoesDiv.appendChild(relacaoDiv);
+      updateRelacoesOptions();
+    }
+
+    function updateRelacoesOptions() {
+      document.querySelectorAll(".relacao-certidao").forEach(select => {
+        const parentId = select.closest(".certidao").id;
+        select.innerHTML = `<option value="">-- Selecione --</option>`;
+        certidoes.forEach(c => {
+          if (c.id !== parentId) {
+            select.innerHTML += `<option value="${c.id}">${c.id}</option>`;
+          }
+        });
+      });
+    }
+
+    function removeCertidao(id) {
+      if (certidoes.length <= 1) {
+        alert("É necessário ter pelo menos uma certidão.");
+        return;
+      }
+      document.getElementById(id).remove();
+      certidoes = certidoes.filter(c => c.id !== id);
+      updateRelacoesOptions();
+    }
+
+    function compararCertidoes() {
+      certidoes.forEach(c => {
+        c.tipo = document.getElementById(`${c.id}-tipo`).value;
+        c.nome = document.getElementById(`${c.id}-nome`).value.trim();
+        c.nascimento = document.getElementById(`${c.id}-nascimento`).value;
+        c.pai = document.getElementById(`${c.id}-pai`).value.trim();
+        c.mae = document.getElementById(`${c.id}-mae`).value.trim();
+        c.avoPaterno = document.getElementById(`${c.id}-avo-paterno`).value.trim();
+        c.avoPaterna = document.getElementById(`${c.id}-avo-paterna`).value.trim();
+        c.avoMaterno = document.getElementById(`${c.id}-avo-materno`).value.trim();
+        c.avoMaterna = document.getElementById(`${c.id}-avo-materna`).value.trim();
+
+        c.relacoes = [];
+        document.querySelectorAll(`#${c.id}-relacoes .relacao-item`).forEach(div => {
+          const relacaoCertidao = div.querySelector(".relacao-certidao").value;
+          const relacaoTipo = div.querySelector(".relacao-tipo").value;
+          if (relacaoCertidao && relacaoTipo) {
+            c.relacoes.push({ com: relacaoCertidao, tipo: relacaoTipo });
+          }
+        });
+      });
+
+      let output = "<h2>Resultados da Comparação:</h2>";
+      for (let i = 0; i < certidoes.length; i++) {
+        for (let j = i + 1; j < certidoes.length; j++) {
+          const c1 = certidoes[i], c2 = certidoes[j];
+          output += `<h3>${c1.id} vs ${c2.id}</h3>`;
+          output += compararCampos(c1.nome, c2.nome, "Nome");
+          output += compararCampos(c1.pai, c2.pai, "Pai");
+          output += compararCampos(c1.mae, c2.mae, "Mãe");
+          output += compararCampos(c1.avoPaterno, c2.avoPaterno, "Avô Paterno");
+          output += compararCampos(c1.avoPaterna, c2.avoPaterna, "Avó Paterna");
+          output += compararCampos(c1.avoMaterno, c2.avoMaterno, "Avô Materno");
+          output += compararCampos(c1.avoMaterna, c2.avoMaterna, "Avó Materna");
+        }
+      }
+
+      document.getElementById("results").innerHTML = output;
+      gerarTextoExportacao();
+    }
+
+    function compararCampos(v1, v2, campo) {
+      if (!v1 && !v2) return "";
+      const sim = similaridade(v1, v2);
+      return `<p><b>${campo}:</b> "${v1}" vs "${v2}" → Similaridade: ${(sim*100).toFixed(1)}%</p>`;
+    }
+
+    function similaridade(s1, s2) {
+      if (!s1 || !s2) return 0;
+      const l1 = s1.toLowerCase(), l2 = s2.toLowerCase();
+      const dist = levenshtein(l1, l2);
+      return 1 - dist / Math.max(l1.length, l2.length);
+    }
+
+    function levenshtein(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({length: m+1}, () => Array(n+1).fill(0));
+      for (let i=0;i<=m;i++) dp[i][0]=i;
+      for (let j=0;j<=n;j++) dp[0][j]=j;
+      for (let i=1;i<=m;i++) {
+        for (let j=1;j<=n;j++) {
+          if (a[i-1]===b[j-1]) dp[i][j]=dp[i-1][j-1];
+          else dp[i][j]=1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+        }
+      }
+      return dp[m][n];
+    }
+
+    function formatarData(iso) {
+      if (!iso) return "";
+      const [ano, mes, dia] = iso.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function gerarTextoExportacao() {
+      let texto = "";
+      certidoes.forEach((c, i) => {
+        texto += `Certidão ${i+1}\n`;
+        texto += `Tipo: ${c.tipo}\n`;
+        texto += `Nome: ${c.nome}\n`;
+        texto += `Data de Nascimento: ${formatarData(c.nascimento)}\n`;
+        texto += `Pai: ${c.pai}\n`;
+        texto += `Mãe: ${c.mae}\n`;
+        texto += `Avô Paterno: ${c.avoPaterno}\n`;
+        texto += `Avó Paterna: ${c.avoPaterna}\n`;
+        texto += `Avô Materno: ${c.avoMaterno}\n`;
+        texto += `Avó Materna: ${c.avoMaterna}\n`;
+        if (c.relacoes.length) {
+          texto += "Relações:\n";
+          c.relacoes.forEach(r => {
+            texto += ` - ${r.tipo} de ${r.com}\n`;
+          });
+        }
+        texto += `\n`;
+      });
+      document.getElementById("exportText").value = texto;
+    }
+
+    function copiarTexto() {
+      const textarea = document.getElementById("exportText");
+      textarea.select();
+      document.execCommand("copy");
+      alert("Texto copiado!");
+    }
+
+    function resetar() {
+      if (confirm("Deseja limpar tudo?")) {
+        document.getElementById("certidoes-container").innerHTML = "";
+        document.getElementById("results").innerHTML = "";
+        document.getElementById("exportText").value = "";
+        certidoes = [];
+        certidaoCount = 0;
+        addCertidao();
+      }
+    }
+
+    // inicia com 1 certidão
+    addCertidao();
+  </script>
+</body>
 </html>
